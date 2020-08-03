@@ -5,6 +5,7 @@ import ExploreContainer from '../components/ExploreContainer';
 import './Tab3.css';
 import { RouteComponentProps } from 'react-router';
 import useLocalStorage from '../components/LocalStorage'
+import { useIonViewDidEnter } from '@ionic/react';
 
 interface CartPageProps extends RouteComponentProps<{
   id: string;
@@ -27,7 +28,7 @@ type Cart = Dictionary<CartItem>
 
 
 
-const addItem = function(id:string, cart:Cart):Cart { // TODO:fixme 
+const addItem = async function(id:string, cart:Cart):Promise<Cart> { // TODO:fixme 
   if ((id != null) && (id.length > 0)) {
     if ( cart[id] == null) {
       cart[id] = { id:id, qty:1 };
@@ -40,6 +41,9 @@ const addItem = function(id:string, cart:Cart):Cart { // TODO:fixme
 
 function allItems(cart:Cart): CartItem[] { 
   let res = new Array<CartItem>()
+  for (let key in cart){
+    res.push(cart[key])
+  }
   // TODO: fixme
   return res
 }
@@ -49,20 +53,35 @@ const Tab3: React.FC<CartPageProps> = ({match}) => {
   const [ cart, setCart  ] = useLocalStorage<Cart>('cart', {});
 
   useEffect(() => { 
+    if (match.params.id)
+    {fetch(`https://localhost:5001/api/product/get/${match.params.id}`)
+    .then(x => x.json())
+    .then(product => {addItem(match.params.id,cart)
+    .then(cart=>{
+      cart[match.params.id]['name'] = product[0]['name'];
+      cart[match.params.id]['description'] = product[0]['description'];
+      cart[match.params.id]['price'] = product[0]['price'];
+      setCart(cart);
+    }).finally(() => setShowLoading(false))
+    })
+    .catch(x=>{})
+    .finally(() => {setShowLoading(false)})
+    }
+    else{ setShowLoading(false)}
+    },[cart])
     // TODO: fixme 
-  }, [cart])
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>My Chart</IonTitle>
+          <IonTitle>My Cart</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">My Chart</IonTitle>
+            <IonTitle size="large">My Cart</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonLoading
@@ -71,9 +90,15 @@ const Tab3: React.FC<CartPageProps> = ({match}) => {
           message={'Loading...'}
         />
         <IonList>
-          {
-            // TODO:fixme
-          }
+          {allItems(cart).map((item, index) => (
+            <IonItem key={index}>
+              <IonLabel>
+              <h1>{item.id}: {item.name}</h1>
+                  <p>S${item.price}</p>
+                  <p>qty: {item.qty}</p>
+              </IonLabel>
+            </IonItem>
+          ))}
         </IonList>
       </IonContent>
     </IonPage>

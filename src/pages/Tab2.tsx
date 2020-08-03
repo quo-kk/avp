@@ -51,7 +51,6 @@ const Tab2: React.FC = () => {
           message={'Loading...'}
         />
         <IonList>
-          
           {products.map((item, index) => (
             <IonItem key={index} routerLink = {makeLink(item)}>
               <IonLabel>
